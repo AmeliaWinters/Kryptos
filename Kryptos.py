@@ -75,13 +75,10 @@ def rotateMatrixAnticlockwise(matrix):
 
 def intended_k3(ciphertext):
     K3Matrix = getMatrix(ciphertext)
-    for row in K3Matrix:
-        print(' '.join(row))
-    print()
     K3MatrixRotate = rotateMatrixAnticlockwise(K3Matrix)
     K3Matrix8Col = transformMatrix(K3MatrixRotate, 8)
-    for row in K3MatrixRotate:
-        print(' '.join(row))
+    plaintext = rotateMatrixAnticlockwise(K3Matrix8Col)
+    return ''.join(''.join(row) for row in plaintext)
 
 
 K1 = "EMUFPHZLRFAXYUSDJKZLDKRNSHGNFIVJYQTQUXQBQVYUVLLTREVJYQTMKYRDMFD"
@@ -92,8 +89,8 @@ K3Spaces = "ENDYAHROHNLSRHEOCPTEOIBI DYSHNAIACHTNREYULDSLLSLL NOHSNOSMRWXMNETPRN
 kryptos_alphabet = "KRYPTOSABCDEFGHIJLMNQUVWXZ"
 print("K1: ", vigenere_decrypt(K1, "PALIMPSEST", kryptos_alphabet))
 print("K2: ", vigenere_decrypt(K2, "ABSCISSA", kryptos_alphabet))
-print("K3: ", simple_k3(K3, 192))
-intended_k3(K3Spaces)
+print("K3 Simple: ", simple_k3(K3, 192))
+print("K3 Intended: ", intended_k3(K3Spaces))
 
 #aa = "ILNTAYESTATHCW BLHMHEHAROIEEH ISIWNTHONRSLEO OLTETYMFTEHMHD ELAAEOAERIILUV TSGCRIPEEPEKET PDNADESTEWCRFR CLRIUARBAELTMT OUPIEHBLMTIIFT EYTPNNTRRSHRGS HEELEEFEAMDOMS RRNBTWIEOTDLHL SNMECIEYTTTDON LTXLHTRGOHCYEH NHWEADCEEAERNE HCRNREYTAAADPM OAMNNSAAUIBDDI RISLELTMTNESRE HAOSEOCAEDFOAF ANNETFNTUDWAHP YHSPITEATEEEDI DSHRDEENOSIOTR NYOANOHEIBRGGM EDNRWEQWFIGEAD"
 
