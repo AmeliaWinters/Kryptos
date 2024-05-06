@@ -1,8 +1,12 @@
-#import nltk
-#nltk.download('words')
-#from nltk.corpus import words
+import nltk
+nltk.download('words')
+from nltk.corpus import words
+import threading
+from queue import Queue
+import time
 
 def generate_key(text, key):
+    key = ''.join([char for char in key if char.isalpha()])
     key = key * (len(text) // len(key) + 1)
     return key[:len(text)]
 
@@ -11,7 +15,7 @@ def vigenere_decrypt(text, key, alphabet):
     key = generate_key(text, key)
     for i in range(len(text)):
         if text[i].isalpha():
-            idx = (alphabet.index(text[i].upper()) - alphabet.index(key[i].upper()) + len(alphabet)) % len(alphabet)
+            idx = (alphabet.index(text[i].lower()) - alphabet.index(key[i].lower()) + len(alphabet)) % len(alphabet)
             decrypted_text.append(alphabet[idx])
         else:
             decrypted_text.append(text[i])
@@ -90,9 +94,9 @@ def bruteforceMatrixRotation(K4):
 
 
 def berlinClock1213(K4):
-    K4 = vigenere_decrypt(K4, "PALIMPSET", kryptos_alphabet)
-    K4 = vigenere_decrypt(K4, "ABSCISSA", kryptos_alphabet)
-    K4 = vigenere_decrypt(K4, "PALIMPSET", kryptos_alphabet)
+    K4 = vigenere_decrypt(K4, "PALIMPSET", kryptosAlphabet)
+    K4 = vigenere_decrypt(K4, "ABSCISSA", kryptosAlphabet)
+    K4 = vigenere_decrypt(K4, "PALIMPSET", kryptosAlphabet)
     #K4 = intended_k3(K4)
     return K4
 
@@ -110,8 +114,8 @@ def split1213(K4):
         code3.append(K4[:1])
         K4 = K4[1:]
 
-    K1 = vigenere_decrypt(code1, "PALIMPSET", kryptos_alphabet)
-    K2 = vigenere_decrypt(code2, "ORDINATE", kryptos_alphabet)
+    K1 = vigenere_decrypt(code1, "PALIMPSET", kryptosAlphabet)
+    K2 = vigenere_decrypt(code2, "ORDINATE", kryptosAlphabet)
     print(K1)
     print(K2)
     #K3 = intended_k3(code3)
@@ -124,19 +128,80 @@ K3Spaces = "ENDYAHROHNLSRHEOCPTEOIBI DYSHNAIACHTNREYULDSLLSLL NOHSNOSMRWXMNETPRN
 K4 = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
 K4Solution = 'OBKRUOXOGHULBSOLIFBBWEASTNORTHEASTOTWTQSJQSSEKZZWATJKLUDIAWINFBBERLINCLOCKWGDKZXTJCDIGKUHUAUEKCAR'
 
-kryptos_alphabet = "KRYPTOSABCDEFGHIJLMNQUVWXZ"
+kryptosAlphabet = "KRYPTOSABCDEFGHIJLMNQUVWXZ"
 #print("K1: ", vigenere_decrypt(K1, "PALIMPSEST", kryptos_alphabet))
 #print("K2: ", vigenere_decrypt(K2, "ABSCISSA", kryptos_alphabet))
 #print("K3 Simple: ", simple_k3(K3, 192))
 #print("K3 Intended: ", intended_k3(K3Spaces))
 #print("K4: ", berlinClock1213(K4))
-print("K4: ", split1213(K4))
+#print(vigenere_decrypt(vigenere_decrypt(K4, "ORDINATE"), "PALIMPSEST"))
+#print("K4: ", split1213(K4))
+#print(K4Solution[21:34])
 
-#word_list = words.words()
+wordList = words.words()
+wordList.append("kryptos")
+wordList = [word.lower() for word in wordList if 4 <= len(word) <= 10]
+alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-# Filter words by length
-#filtered_words = [word for word in word_list if 4 <= len(word) <= 10]
-#print(filtered_words)
+
+def getCustomAlphabet(word):
+    remaining_alphabet = ''.join([char for char in alphabet if char not in word])
+    
+    result = word + remaining_alphabet
+    return result
+
+def hasNoRepeatedCharacters(word):
+    return len(set(word)) == len(word)
+
+nonRepeatedWords = [word.lower() for word in wordList if hasNoRepeatedCharacters(word)]
+
+
+def bruteForceVigenereCustomAlphabet(K4, depth=1, maxDepth=2):
+    if depth > maxDepth:
+        return
+     
+    i = 0
+    for alphabetWord in nonRepeatedWords:
+        if hasNoRepeatedCharacters(alphabetWord):
+            for word in wordList:
+                decipherText1 = vigenere_decrypt(K4, word, getCustomAlphabet(alphabetWord))
+
+                if(decipherText1[21:34].lower() == "eastnortheast"):
+                    print("solution found!", word)
+                    return
+
+                if depth < maxDepth:
+                        print(f"----------K4 and word {word} with alphabetWord {alphabetWord}, not the solution. Run depth 2----------")
+                        bruteForceVigenereCustomAlphabet(decipherText1, depth + 1, maxDepth)
+                
+                if i % 1000000 == 0 and i != 0:
+                    print(f"Iteration {i/1000000}m: Tested alphabet '{alphabetWord}', text {K4[0:10]} word '{word}', not a solution yet.")
+                
+                i += 1
+
+def bruteForceVigenere(K4, depth=1, maxDepth=2, prevWord=None, i = 0):
+    for word in wordList:
+        decipherText = vigenere_decrypt(K4, word, getCustomAlphabet("kryptos"))
+
+        if(decipherText[21:34].lower() == "eastnortheast"):
+            print(f"solution found! word: {word} and previous word: {prevWord}")
+            return
+
+        if depth < maxDepth:
+                print(f"----------K4 and word {word}, not the solution. Run depth 2----------")
+                bruteForceVigenere(decipherText, depth + 1, maxDepth, word, i)
+                i += len(wordList)
+
+        if i != 0 and i % 1000000 == 0:
+            print(f"Iteration {i/1000000}m - prevWord: '{prevWord}' - text '{K4[0:10]}' - word '{word}' wordsLeft: - not a solution yet.")
+            print(f"time elapsed {time.time() - startTime}")
+        
+        i += 1
+
+startTime = time.time()
+bruteForceVigenere(K4)
+
+#Notes
 
 #07:08:44 x Layer Two
 #F   L    R   V    Q     Q    P   R     N     G    K      S S
@@ -148,4 +213,3 @@ print("K4: ", split1213(K4))
 #B  E R L  I  N   C  L O C  K
 #14 6 2 16 15 20 10 12 9 13 0
 
-#print(vigenere_decrypt(vigenere_decrypt(K4, "ORDINATE"), "PALIMPSEST"))
