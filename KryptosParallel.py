@@ -2,14 +2,48 @@ import nltk
 nltk.download('words')
 from nltk.corpus import words
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import time
+import os
 
 K4 = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
 
-wordList = words.words()
-wordList.append("kryptos")
-wordList = [word.lower() for word in wordList if 4 <= len(word) <= 10]
+allWordList = words.words()
+allWordList.append("kryptos")
+allWordList = [word.lower() for word in allWordList if 4 <= len(word) <= 10]
 alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+maxWorkers = 10
+
+
+def makeFiles(wordList, filesToMake):
+    segment_size = len(allWordList) // maxWorkers
+    segments = [allWordList[i:i + segment_size] for i in range(0, len(allWordList), segment_size)]
+    i = 0
+    for segment in segments:
+        with open(f"wordsToCheck{i}.txt", 'w') as file:
+            for word in segment:
+                file.write(word + '\n')
+        i+=1
+
+def getSegmentsFromFiles():
+    remainingSegments = [[] for _ in range(maxWorkers)]
+    i = 0
+    for i in range(maxWorkers):
+        with open(f"wordsToCheck{i}.txt", 'r') as file:
+            for line in file:
+                remainingSegments[i].append(line.strip())
+    return remainingSegments
+
+
+def removeWordFromFile(wordToRemove, i):
+    tempFilePath = f"wordsToCheck{i}.txt.tmp"
+    with open(f"wordsToCheck{i}.txt", 'r') as file, open(tempFilePath, 'w') as temp_file:
+        for line in file:
+            stripped_line = line.strip()
+            if stripped_line != wordToRemove:
+                temp_file.write(stripped_line + '\n')
+    
+    os.replace(tempFilePath, f"wordsToCheck{i}.txt")
+
 
 def generateKey(text, key):
     key = ''.join([char for char in key if char.isalpha()])
@@ -44,7 +78,7 @@ def attemptDecrypt(K4, word, full_word_list, recurse=False, prevWord=None):
                 return result
     return None
 
-def processSegment(segment, full_word_list):
+def processSegment(segment, full_word_list, segmentIndex):
     i = 0
     for word in segment:
         result = attemptDecrypt(K4, word, full_word_list, recurse=True)
@@ -52,21 +86,22 @@ def processSegment(segment, full_word_list):
             return result
         else:
             i += 1
+            removeWordFromFile(word, segmentIndex)
             print(f"Word {i} - '{word}' is not the solution. ")
     return None
 
 def bruteForceVigenereParallel(K4):
-    segment_size = len(wordList) // 10
-    segments = [wordList[i:i + segment_size] for i in range(0, len(wordList), segment_size)]
+    segments = getSegmentsFromFiles()
     
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_segment = {executor.submit(processSegment, segment, wordList): segment for segment in segments}
+    with ThreadPoolExecutor(max_workers=maxWorkers) as executor:
+        future_to_segment = {executor.submit(processSegment, segment, allWordList, index): (index, segment) for index, segment in enumerate(segments)}
+
         for future in as_completed(future_to_segment):
             result = future.result()
             if result:
                 print(result)
                 break
 
-startTime = time.time()
+
 bruteForceVigenereParallel(K4)
-print(f"Time elapsed: {time.time() - startTime} seconds")
+
