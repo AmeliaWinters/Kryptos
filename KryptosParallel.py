@@ -11,14 +11,14 @@ wordList.append("kryptos")
 wordList = [word.lower() for word in wordList if 4 <= len(word) <= 10]
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-def generate_key(text, key):
+def generateKey(text, key):
     key = ''.join([char for char in key if char.isalpha()])
     key = key * (len(text) // len(key) + 1)
     return key[:len(text)]
 
-def vigenere_decrypt(text, key, alphabet):
+def vigenereDecrypt(text, key, alphabet):
     decrypted_text = []
-    key = generate_key(text, key)
+    key = generateKey(text, key)
     for i in range(len(text)):
         if text[i].isalpha():
             idx = (alphabet.index(text[i].lower()) - alphabet.index(key[i].lower()) + len(alphabet)) % len(alphabet)
@@ -27,27 +27,27 @@ def vigenere_decrypt(text, key, alphabet):
             decrypted_text.append(text[i])
     return ''.join(decrypted_text)
 
-def get_custom_alphabet(word):
+def getCustomAlphabet(word):
     remaining_alphabet = ''.join([char for char in alphabet if char not in word])
     result = word + remaining_alphabet
     return result
 
-def attempt_decrypt(K4, word, full_word_list, recurse=False, prevWord=None):
-    decipher_text = vigenere_decrypt(K4, word, get_custom_alphabet("kryptos"))
+def attemptDecrypt(K4, word, full_word_list, recurse=False, prevWord=None):
+    decipher_text = vigenereDecrypt(K4, word, getCustomAlphabet("kryptos"))
     if decipher_text[21:34].lower() == "eastnortheast":
         print(f"Solution found with word: {word} and prevWord: {prevWord}")
         return f"Solution found with word: {word} and prevWord: {prevWord}"
     elif recurse:
         for next_word in full_word_list:
-            result = attempt_decrypt(decipher_text, next_word, full_word_list, False, word)
+            result = attemptDecrypt(decipher_text, next_word, full_word_list, False, word)
             if result:
                 return result
     return None
 
-def process_segment(segment, full_word_list):
+def processSegment(segment, full_word_list):
     i = 0
     for word in segment:
-        result = attempt_decrypt(K4, word, full_word_list, recurse=True)
+        result = attemptDecrypt(K4, word, full_word_list, recurse=True)
         if result:
             return result
         else:
@@ -55,12 +55,12 @@ def process_segment(segment, full_word_list):
             print(f"Word {i} - '{word}' is not the solution. ")
     return None
 
-def brute_force_vigenere_parallel(K4):
+def bruteForceVigenereParallel(K4):
     segment_size = len(wordList) // 10
     segments = [wordList[i:i + segment_size] for i in range(0, len(wordList), segment_size)]
     
     with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_segment = {executor.submit(process_segment, segment, wordList): segment for segment in segments}
+        future_to_segment = {executor.submit(processSegment, segment, wordList): segment for segment in segments}
         for future in as_completed(future_to_segment):
             result = future.result()
             if result:
@@ -68,5 +68,5 @@ def brute_force_vigenere_parallel(K4):
                 break
 
 startTime = time.time()
-brute_force_vigenere_parallel(K4)
+bruteForceVigenereParallel(K4)
 print(f"Time elapsed: {time.time() - startTime} seconds")
