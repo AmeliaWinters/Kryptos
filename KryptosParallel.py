@@ -36,13 +36,22 @@ def getSegmentsFromFiles():
 
 def removeWordFromFile(wordToRemove, i):
     tempFilePath = f"wordsToCheck{i}.txt.tmp"
-    with open(f"wordsToCheck{i}.txt", 'r') as file, open(tempFilePath, 'w') as temp_file:
-        for line in file:
-            stripped_line = line.strip()
-            if stripped_line != wordToRemove:
+    found = False
+
+    try:
+        with open(f"wordsToCheck{i}.txt", 'r') as file, open(tempFilePath, 'w') as temp_file:
+            for line in file:
+                stripped_line = line.strip()
+                if stripped_line == wordToRemove and not found:
+                    found = True 
+                    continue  
                 temp_file.write(stripped_line + '\n')
-    
-    os.replace(tempFilePath, f"wordsToCheck{i}.txt")
+
+        if found:
+            import os
+            os.replace(tempFilePath, f"wordsToCheck{i}.txt")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 
 def generateKey(text, key):
