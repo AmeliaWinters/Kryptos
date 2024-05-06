@@ -6,7 +6,6 @@ import time
 
 K4 = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
 
-# Prepare the word list
 wordList = words.words()
 wordList.append("kryptos")
 wordList = [word.lower() for word in wordList if 4 <= len(word) <= 10]
@@ -57,12 +56,10 @@ def process_segment(segment, full_word_list):
     return None
 
 def brute_force_vigenere_parallel(K4):
-    # Splitting the word list into 10 equal segments
     segment_size = len(wordList) // 10
     segments = [wordList[i:i + segment_size] for i in range(0, len(wordList), segment_size)]
     
     with ThreadPoolExecutor(max_workers=10) as executor:
-        # Map the process_segment function over all segments
         future_to_segment = {executor.submit(process_segment, segment, wordList): segment for segment in segments}
         for future in as_completed(future_to_segment):
             result = future.result()
