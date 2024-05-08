@@ -13,6 +13,7 @@ alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 maxWorkers = 10
 
+globalBestDistance = math.inf
 
 def makeFiles(wordList, filesToMake):
     segment_size = len(allWordList) // maxWorkers
@@ -87,6 +88,11 @@ def getAlphabeticalDistance(str1, str2):
     
     return totalDistance
 
+def writeRecord(text):
+    with open("bestWords.txt", "a") as file:
+        file.write(f"{text}\n")
+
+
 
 def attemptDecrypt(K4, word, fullWordList, recurse=False, prevWord=None, bestDistance=math.inf, bestMatchWord="", bestPhrase=""):
     decipher_text = vigenereDecrypt(K4, word, getCustomAlphabet("kryptos"))
@@ -125,7 +131,10 @@ def processSegment(segment, full_word_list, segmentIndex):
         else:
             i += 1
             removeWordFromFile(word, segmentIndex)
-            print(f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}")
+            msg = f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}"
+            print(msg)
+            if bestDistance < globalBestDistance:
+                writeRecord(msg)
     return None
 
 def bruteForceVigenereParallel(K4):
