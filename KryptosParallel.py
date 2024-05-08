@@ -125,7 +125,7 @@ def processSegment(segment, full_word_list, segmentIndex):
         else:
             i += 1
             removeWordFromFile(word, segmentIndex)
-            print(f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}<- ")
+            print(f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}")
     return None
 
 def bruteForceVigenereParallel(K4):
