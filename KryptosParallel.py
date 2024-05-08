@@ -2,12 +2,12 @@ import nltk
 nltk.download('words')
 from nltk.corpus import words
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import os
+import math
 
 K4 = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
 
 allWordList = words.words()
-allWordList.append("kryptos")
+allWordList.insert(0, "kryptos")
 allWordList = [word.lower() for word in allWordList if 4 <= len(word) <= 10]
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
@@ -75,28 +75,57 @@ def getCustomAlphabet(word):
     result = word + remaining_alphabet
     return result
 
-def attemptDecrypt(K4, word, full_word_list, recurse=False, prevWord=None):
+def getAlphabeticalDistance(str1, str2):
+    if len(str1) != len(str2):
+        raise ValueError("Strings must be of the same length")
+    
+    totalDistance = 0
+    
+    for char1, char2 in zip(str1, str2):
+        distance = abs(ord(char1) - ord(char2))
+        totalDistance += distance
+    
+    return totalDistance
+
+
+def attemptDecrypt(K4, word, fullWordList, recurse=False, prevWord=None, bestDistance=math.inf, bestMatchWord="", bestPhrase=""):
     decipher_text = vigenereDecrypt(K4, word, getCustomAlphabet("kryptos"))
+
+    currentDistance = getAlphabeticalDistance(decipher_text[21:34].lower(), "eastnortheast")
+        
+    if currentDistance < bestDistance:
+        bestDistance = currentDistance
+        bestMatchWord = word
+        bestPhrase = decipher_text[21:34]
+
     if decipher_text[21:34].lower() == "eastnortheast":
-        print(f"Solution found with word: {word} and prevWord: {prevWord}")
-        return f"Solution found with word: {word} and prevWord: {prevWord}"
+        result = f"Solution found!!!!!!!!!! With word: {word} and prevWord: {prevWord}"
+        print(result)
+        return result, bestDistance, bestMatchWord
     elif recurse:
-        for next_word in full_word_list:
-            result = attemptDecrypt(decipher_text, next_word, full_word_list, False, word)
+        for next_word in fullWordList:
+            result, distance, match_word, best_phrase = attemptDecrypt(decipher_text, next_word, fullWordList, False, word, bestDistance)
+
+            if distance < bestDistance:
+                bestDistance = distance
+                bestMatchWord = match_word
+                bestPhrase = best_phrase
+
             if result:
-                return result
-    return None
+                return result, distance, match_word, best_phrase
+            
+    return None, bestDistance, bestMatchWord, bestPhrase
 
 def processSegment(segment, full_word_list, segmentIndex):
     i = 0
     for word in segment:
-        result = attemptDecrypt(K4, word, full_word_list, recurse=True)
+        result, bestDistance, bestMatchWord, bestPhrase = attemptDecrypt(K4, word, full_word_list, recurse=True)
         if result:
             return result
         else:
             i += 1
             removeWordFromFile(word, segmentIndex)
-            print(f"Word {i} - '{word}' is not the solution. ")
+            print(f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}<- ")
     return None
 
 def bruteForceVigenereParallel(K4):
