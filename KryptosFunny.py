@@ -145,6 +145,8 @@ wordList.append("kryptos")
 wordList = [word.lower() for word in wordList if 4 <= len(word) <= 10]
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
+funnyWordList = [word.lower() for word in wordList if 6 <= len(word)]
+
 
 def getCustomAlphabet(word):
     remaining_alphabet = ''.join([char for char in alphabet if char not in word])
@@ -189,19 +191,15 @@ def bruteForceVigenere(K4, depth=1, maxDepth=2, prevWord=None, i = 0):
             print(f"solution found! word: {word} and previous word: {prevWord}")
             return
 
-        if depth < maxDepth:
-                print(f"----------K4 and word {word}, not the solution. Run depth 2----------")
-                bruteForceVigenere(decipherText, depth + 1, maxDepth, word, i)
-                i += len(wordList)
-
-        if i != 0 and i % 1000000 == 0:
-            print(f"Iteration {i/1000000}m - prevWord: '{prevWord}' - text '{K4[0:10]}' - word '{word}' wordsLeft: - not a solution yet.")
-            print(f"time elapsed {time.time() - startTime}")
+        for funnyWord in funnyWordList:
+            if funnyWord in decipherText:
+                print(f"{word} has a funny word! - {funnyWord} text: {decipherText}")
+                break
         
         i += 1
 
 #startTime = time.time()
-#bruteForceVigenere(K4)
+bruteForceVigenere(K4)
 
 def getMatrix(ciphertext):
     rows = ciphertext.split()
@@ -248,21 +246,6 @@ def whatifUJustRotateK4(ciphertext):
             print(''.join(''.join(row) for row in plaintext))
 
 
-
-K4Q = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
-
-from collections import Counter
-
-def char_count(s):
-    # Use Counter to count the occurrences of each character
-    counts = Counter(s)
-    
-    # Convert the Counter dictionary to a list of (character, count) tuples
-    result = list(counts.items())
-    
-    return result
-
-print(char_count(K4Q))
 
 #whatifUJustRotateK4(vigenere_decrypt(vigenere_decrypt(K4Q, "ABCISSA", kryptosAlphabet.lower()), "PALIMPSEST", kryptosAlphabet.lower()))
 

@@ -1,29 +1,30 @@
-import nltk
-nltk.download('words')
-from nltk.corpus import words
+#import nltk
+#nltk.download('words')
+#from nltk.corpus import words
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import math
 
 K4 = "OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR"
 
-allWordList = words.words()
-allWordList.insert(0, "kryptos")
-allWordList = [word.lower() for word in allWordList if 4 <= len(word) <= 10]
+#allWordList = words.words()
+#allWordList.insert(0, "kryptos")
+#allWordList = [word.lower() for word in allWordList if 4 <= len(word) <= 10]
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
 maxWorkers = 10
+remainingWordList = []
 
-globalBestDistance = math.inf
+globalBestDistance = 16
 
-def makeFiles(wordList, filesToMake):
-    segment_size = len(allWordList) // maxWorkers
-    segments = [allWordList[i:i + segment_size] for i in range(0, len(allWordList), segment_size)]
-    i = 0
-    for segment in segments:
-        with open(f"wordsToCheck{i}.txt", 'w') as file:
-            for word in segment:
-                file.write(word + '\n')
-        i+=1
+#def makeFiles(wordList, filesToMake):
+#    segment_size = len(allWordList) // maxWorkers
+#    segments = [allWordList[i:i + segment_size] for i in range(0, len(allWordList), segment_size)]
+#    i = 0
+#   for segment in segments:
+#        with open(f"wordsToCheck{i}.txt", 'w') as file:
+#            for word in segment:
+#                file.write(word + '\n')
+#        i+=1
 
 def getSegmentsFromFiles():
     remainingSegments = [[] for _ in range(maxWorkers)]
@@ -35,9 +36,11 @@ def getSegmentsFromFiles():
     return remainingSegments
 
 
-def removeWordFromFile(wordToRemove, i):
+def removeWordFromList(wordToRemove, i):
     tempFilePath = f"wordsToCheck{i}.txt.tmp"
     found = False
+    global remainingWordList
+    remainingWordList.remove(wordToRemove)
 
     try:
         with open(f"wordsToCheck{i}.txt", 'r') as file, open(tempFilePath, 'w') as temp_file:
@@ -94,7 +97,8 @@ def writeRecord(text):
 
 
 
-def attemptDecrypt(K4, word, fullWordList, recurse=False, prevWord=None, bestDistance=math.inf, bestMatchWord="", bestPhrase=""):
+def attemptDecrypt(K4, word, recurse=False, prevWord=None, bestDistance=math.inf, bestMatchWord="", bestPhrase=""):
+    global remainingWordList
     decipher_text = vigenereDecrypt(K4, word, getCustomAlphabet("kryptos"))
 
     currentDistance = getAlphabeticalDistance(decipher_text[21:34].lower(), "eastnortheast")
@@ -109,8 +113,8 @@ def attemptDecrypt(K4, word, fullWordList, recurse=False, prevWord=None, bestDis
         print(result)
         return result, bestDistance, bestMatchWord
     elif recurse:
-        for next_word in fullWordList:
-            result, distance, match_word, best_phrase = attemptDecrypt(decipher_text, next_word, fullWordList, False, word, bestDistance)
+        for next_word in remainingWordList:
+            result, distance, match_word, best_phrase = attemptDecrypt(decipher_text, next_word, False, word, bestDistance)
 
             if distance < bestDistance:
                 bestDistance = distance
@@ -122,26 +126,32 @@ def attemptDecrypt(K4, word, fullWordList, recurse=False, prevWord=None, bestDis
             
     return None, bestDistance, bestMatchWord, bestPhrase
 
-def processSegment(segment, full_word_list, segmentIndex):
+def processSegment(segment, segmentIndex, startingBestDistance):
     i = 0
+    global globalBestDistance
+    globalBestDistance = startingBestDistance
     for word in segment:
-        result, bestDistance, bestMatchWord, bestPhrase = attemptDecrypt(K4, word, full_word_list, recurse=True)
+        result, bestDistance, bestMatchWord, bestPhrase = attemptDecrypt(K4, word, recurse=True)
         if result:
             return result
         else:
             i += 1
-            removeWordFromFile(word, segmentIndex)
+            removeWordFromList(word, segmentIndex)
             msg = f"Word {i} - '{word}' is not the solution. Best match word is {bestMatchWord}. Which spells out {bestPhrase} with smallest distance of ->{bestDistance}"
             print(msg)
-            if bestDistance < globalBestDistance:
+            if bestDistance <= globalBestDistance:
+                globalBestDistance = bestDistance
                 writeRecord(msg)
+        
     return None
 
-def bruteForceVigenereParallel(K4):
+def bruteForceVigenereParallel(K4, globalBestDistance):
     segments = getSegmentsFromFiles()
+    global remainingWordList
+    remainingWordList = [word for segment in segments for word in segment]
     
     with ThreadPoolExecutor(max_workers=maxWorkers) as executor:
-        future_to_segment = {executor.submit(processSegment, segment, allWordList, index): (index, segment) for index, segment in enumerate(segments)}
+        future_to_segment = {executor.submit(processSegment, segment, index, globalBestDistance): (index, segment) for index, segment in enumerate(segments)}
 
         for future in as_completed(future_to_segment):
             result = future.result()
@@ -150,5 +160,5 @@ def bruteForceVigenereParallel(K4):
                 break
 
 
-bruteForceVigenereParallel(K4)
+bruteForceVigenereParallel(K4, globalBestDistance)
 
