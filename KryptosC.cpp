@@ -7,11 +7,10 @@
 #include <cctype>
 #include <unordered_set>
 
-// Function to generate the repeating key
 std::string generateKey(const std::string &text, const std::vector<int> &key) {
     std::string key_str;
     for (int k : key) {
-        key_str += 'A' + (k - 1); // Convert numeric value back to character
+        key_str += 'A' + (k - 1); 
     }
     while (key_str.length() < text.length()) {
         key_str += key_str;
@@ -21,27 +20,23 @@ std::string generateKey(const std::string &text, const std::vector<int> &key) {
 
 
 std::string getCustomAlphabet(const std::string& word, const std::string& alphabet) {
-    // Create a set of characters in the input word
     std::unordered_set<char> used_chars(word.begin(), word.end());
     std::string remaining_alphabet;
 
-    // Add only characters from alphabet that are not in the word set
     for (char c : alphabet) {
         if (used_chars.find(c) == used_chars.end()) {
             remaining_alphabet += c;
         }
     }
 
-    // Concatenate the input word and the remaining alphabet
     return word + remaining_alphabet;
 }
 
-// Vigenere decrypt function using numerical values (A = 1, B = 2, etc.)
 std::vector<int> vigenereDecrypt(const std::vector<int> &text, const std::vector<int> &key, int alphabet_length) {
     std::vector<int> decrypted_text;
     for (size_t i = 0; i < text.size(); ++i) {
         int idx = (text[i] - key[i % key.size()] + alphabet_length) % alphabet_length;
-        if (idx == 0) idx = alphabet_length; // Wrap around if index is zero
+        if (idx == 0) idx = alphabet_length;
         decrypted_text.push_back(idx);
     }
     return decrypted_text;
@@ -56,11 +51,11 @@ int calculateDistance(const std::vector<int> &plaintext, const std::vector<int> 
 }
 
 constexpr int char_to_index(char c) {
-    return (c - 'a' + 1); // A = 1, B = 2, ..., Z = 26
+    return (c - 'a' + 1);
 }
 
 constexpr char index_to_char(int index) {
-    return 'a' + ((index - 1) % 26); // Adjusting to 1-based index
+    return 'a' + ((index - 1) % 26); 
 }
 
 // Brute force Vigenere decryption
@@ -80,7 +75,6 @@ void bruteForceVigenere(const std::vector<int> &keyphrase, const std::vector<int
 
             int total_distance = calculateDistance(plaintext, decrypted_phrase);
 
-            // Check if decryption matches plaintext
             if (decrypted_phrase == plaintext) {
                 std::cout << "Solution found! Key: ";
                 outfile << "Solution found! Key: ";
@@ -98,7 +92,7 @@ void bruteForceVigenere(const std::vector<int> &keyphrase, const std::vector<int
 
             if(best_distance > total_distance){
                 best_distance = total_distance;
-                std::string stringKey(length, 'A'); // Initialize the string with the correct length
+                std::string stringKey(length, 'A'); 
                 for (size_t i = 0; i < key.size(); ++i) {
                     stringKey[i] = index_to_char(key[i]);
                 }
@@ -141,8 +135,6 @@ int main() {
         numeric_plain_text_phrase[i] = char_to_index(plain_text_phrase[i]);
         numeric_keyphrase[i] = char_to_index(keyphrase[i]);
     }
-
-    
 
     bruteForceVigenere(numeric_keyphrase, numeric_plain_text_phrase, getCustomAlphabet("kryptos", alphabet));
 
