@@ -595,8 +595,6 @@ void bfs_vigenere(const std::vector<std::string> &words, const std::string &ciph
     std::cout << "Finished checking " << count << " words." << std::endl;
 }
 
-
-
 int scoreDecryptedText(const std::string &decryptedText, const std::string &targetPhrase) {
     return decryptedText.find(targetPhrase) != std::string::npos ? 0 : 100;  // Simplified scoring
 }
